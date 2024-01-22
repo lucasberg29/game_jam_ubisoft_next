@@ -26,6 +26,12 @@
     <ClCompile Include="CCanvas.cpp" />
     <ClCompile Include="CGameManager.cpp" />
     <ClCompile Include="CSceneManager.cpp" />
+    <ClCompile Include="CCollider2D.cpp" />
+    <ClCompile Include="CCannonBall.cpp" />
+    <ClCompile Include="CEnemy.cpp" />
+    <ClCompile Include="CEnemyCreator.cpp" />
+    <ClCompile Include="CCrystal.cpp" />
+    <ClCompile Include="UiManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -58,6 +64,12 @@
     <ClInclude Include="CCanvas.h" />
     <ClInclude Include="CGameManager.h" />
     <ClInclude Include="CSceneManager.h" />
+    <ClInclude Include="CCollider2D.h" />
+    <ClInclude Include="CCannonBall.h" />
+    <ClInclude Include="CEnemy.h" />
+    <ClInclude Include="CEnemyCreator.h" />
+    <ClInclude Include="CCrystal.h" />
+    <ClInclude Include="UiManager.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="stb_image">

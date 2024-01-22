@@ -47,9 +47,9 @@ public:
 	void MoveObject(float x, float y);
 
 	void ClearChildren();
+	void SetStatic(bool isStatic);
 
 private:
-
 	Position m_initialPosition;
 	Velocity m_velocity;
 	bool m_isUsingGravity = false;
@@ -61,5 +61,8 @@ private:
 
 	bool m_isAnimating = false;
 	float m_animationTimer = 0.0f;
+
+	bool m_isColiding = false;
+	bool m_static = false;
 };
 

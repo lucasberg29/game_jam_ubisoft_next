@@ -16,6 +16,11 @@ void CGameObject::AddVelocity(float x, float y)
 
 void CGameObject::Update(float deltaTime)
 {
+	if (m_static == true)
+	{
+		return;
+	}
+
 	if (m_isUsingGravity)
 	{
 		m_velocity.y -= m_gravity;
@@ -115,4 +120,9 @@ void CGameObject::MoveObject(float x, float y)
 void CGameObject::ClearChildren()
 {
 	m_children.clear();
+}
+
+void CGameObject::SetStatic(bool isStatic)
+{
+	m_static = isStatic;
 }

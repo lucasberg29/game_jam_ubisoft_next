@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "CCatapult.h"
 #include "App/app.h"
+#include "CCannonBall.h"
 
+extern std::vector< CCannonBall* > cannonBalls;
 extern std::vector< CGameObject* > gameObjects;
 extern std::vector< CSimpleSprite*> sprites;
 
@@ -40,17 +42,18 @@ void CCatapult::LoadCatapult()
 	cannonBall->SetPosition(cannonPositionX -35.0f, cannonPositionY  + 2.0f);
 	cannonBall->SetScale(0.02f);
 
-	CGameObject* cannonBallObject = new CGameObject();
-	cannonBallObject->LinkSprite(cannonBall);
-	cannonBallObject->friendlyName = "cannonball";
-	gameObjects.push_back(cannonBallObject);
+	CCannonBall* newCannonBall = new CCannonBall();
+	newCannonBall->LinkSprite(cannonBall);
+	newCannonBall->friendlyName = "cannonball";
+	cannonBalls.push_back(newCannonBall);
+	gameObjects.push_back(newCannonBall);
 	sprites.push_back(cannonBall);
 
-	m_cannonBall = cannonBallObject;
-	AddChild(cannonBallObject);
+	m_cannonBall = newCannonBall;
+	AddChild(newCannonBall);
 }
 
-CGameObject* CCatapult::GetCannonBall()
+CCannonBall* CCatapult::GetCannonBall()
 {
 	return m_cannonBall;
 }
@@ -73,4 +76,9 @@ void CCatapult::SetCanInteract(bool canInteract)
 bool CCatapult::GetCanInteract()
 {
 	return m_canInteract;
+}
+
+int CCatapult::GetHealth()
+{
+	return m_health;
 }

@@ -33,12 +33,18 @@ public:
     // game objects
     CGameObject* FindCGameObjectByFriendlyName(std::string friendlyNameToFind);
 
+    CSimpleSprite* FindSpriteByID(std::string friendlyNameToFind);
+
     static bool DeleteGameObjectByFriendlyName(std::string friendlyName);
+
+    static bool DeleteGameObjectByUniqueId(unsigned int id);
 
     // ui
 
     // game manager
     void Update();
+    void GameOver();
 
     void RestartGame();
+    void Victory();
 };

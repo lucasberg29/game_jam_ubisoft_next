@@ -5,12 +5,21 @@
 //------------------------------------------------------------------------
 #include <windows.h> 
 #include <math.h>  
+#include <time.h>
+#include <iomanip>
+#include <sstream>
 //------------------------------------------------------------------------
 #include "app\app.h"
 #include "CGameObject.h"
 #include "CGameManager.h"
 #include "CSceneManager.h"
 #include "CCatapult.h"
+#include "CCannonBall.h"
+#include "CEnemy.h"
+#include "CEnemyCreator.h"
+
+#include "CCrystal.h"
+#include "UiManager.h"
 //------------------------------------------------------------------------
 
 //------------------------------------------------------------------------
@@ -18,10 +27,17 @@
 //------------------------------------------------------------------------
 //CSimpleSprite* testSprite;
 
+CEnemyCreator* enemyCreator;
+
+std::vector< CCannonBall* > cannonBalls;
 std::vector< CGameObject* > gameObjects;
+std::vector< CGameObject* > gameObjectsToDelete;
+
 std::vector< CSimpleSprite*> sprites;
 CSimpleSprite* catapultPlayer;
 CSimpleSprite* cannonBall;
+
+std::vector<int> indexesToDelete;
 
 //CGameObject* catapult;
 CCatapult* catapult;
@@ -29,7 +45,18 @@ CCatapult* catapult;
 CGameManager* CGameManager::gmInstance = NULL;
 CSceneManager* sceneManager;
 
+UiManager* uiManager;
+
+CCrystal* gameCrystal;
+
 float mousePosx, mousePosy;
+
+float GetRandomFloat(float a, float b);
+
+void PlaySoundFromFile(std::string fileName);
+
+//unsigned int* playerScore = 0;
+float timer = 0.0f;
 
 enum
 {
@@ -46,7 +73,11 @@ enum
 //------------------------------------------------------------------------
 void Init()
 {
+
+	srand((unsigned int)time(0));
+
 	sceneManager = new CSceneManager();
+	uiManager = new UiManager();
 	//------------------------------------------------------------------------
 	// Example Sprite Code....
 	//testSprite = App::CreateSprite(".\\TestData\\Test.bmp", 8, 4);
@@ -62,45 +93,40 @@ void Init()
 	// background
 	float speed = 1.0f / 15.0f;
 
-	CSimpleSprite* backgroundSky = App::CreateSprite(".\\Assets\\Background\\sky.png", 1, 1);
-	backgroundSky->SetPosition(APP_VIRTUAL_WIDTH / 2.0f, APP_VIRTUAL_HEIGHT / 2.0f);
-	backgroundSky->SetScale(1.0f);
-	sprites.push_back(backgroundSky);
+	CSimpleSprite* backgroundSkySprite = App::CreateSprite(".\\Assets\\Background\\sky.png", 1, 1);
+	backgroundSkySprite->SetPosition(APP_VIRTUAL_WIDTH / 2.0f, APP_VIRTUAL_HEIGHT / 2.0f);
+	backgroundSkySprite->SetScale(1.0f);
+	CGameObject* backgroundSky = new CGameObject();
+	backgroundSky->LinkSprite(backgroundSkySprite);
+	gameObjects.push_back(backgroundSky);
 
-	CSimpleSprite* backgrounMountains = App::CreateSprite(".\\Assets\\Background\\far-mountains.png", 1, 1);
-	backgrounMountains->SetPosition(APP_VIRTUAL_WIDTH / 2.0f, APP_VIRTUAL_HEIGHT / 2.0f);
-	backgrounMountains->SetScale(1.0f);
-	sprites.push_back(backgrounMountains);
+	CSimpleSprite* backgrounMountainsSprite = App::CreateSprite(".\\Assets\\Background\\far-mountains.png", 1, 1);
+	backgrounMountainsSprite->SetPosition(APP_VIRTUAL_WIDTH / 2.0f, APP_VIRTUAL_HEIGHT / 2.0f);
+	backgrounMountainsSprite->SetScale(1.0f);
+	CGameObject* backgrounMountains = new CGameObject();
+	backgrounMountains->LinkSprite(backgrounMountainsSprite);
+	gameObjects.push_back(backgrounMountains);
 
-	CSimpleSprite* backgrounTrees = App::CreateSprite(".\\Assets\\Background\\trees.png", 1, 1);
-	backgrounTrees->SetPosition(APP_VIRTUAL_WIDTH / 2.0f, APP_VIRTUAL_HEIGHT / 2.0f);
-	backgrounTrees->SetScale(1.0f);
-	sprites.push_back(backgrounTrees);
+	CSimpleSprite* backgrounTreesSprite = App::CreateSprite(".\\Assets\\Background\\trees.png", 1, 1);
+	backgrounTreesSprite->SetPosition(APP_VIRTUAL_WIDTH / 2.0f, APP_VIRTUAL_HEIGHT / 2.0f);
+	backgrounTreesSprite->SetScale(1.0f);
+	CGameObject* backgrounTrees = new CGameObject();
+	backgrounTrees->LinkSprite(backgrounTreesSprite);
+	gameObjects.push_back(backgrounTrees);
 
-	CSimpleSprite* ground1 = App::CreateSprite(".\\Assets\\ground.png", 1, 1);
-	ground1->SetPosition(125.0f, 31.0f);
-	ground1->SetScale(1.0f);
-	sprites.push_back(ground1);
+	unsigned int numOfGroundUnits = 5;
+	for (unsigned int i = 0; i < numOfGroundUnits; i++)
+	{
+		CSimpleSprite* groundSprite = App::CreateSprite(".\\Assets\\ground.png", 1, 1);
 
-	CSimpleSprite* ground2 = App::CreateSprite(".\\Assets\\ground.png", 1, 1);
-	ground2->SetPosition(380.0f, 31.0f);
-	ground2->SetScale(1.0f);
-	sprites.push_back(ground2);
+		
+		groundSprite->SetPosition(125.0f + (255 * i), 31.0f);
+		groundSprite->SetScale(1.0f);
 
-	CSimpleSprite* ground3 = App::CreateSprite(".\\Assets\\ground.png", 1, 1);
-	ground3->SetPosition(635.0f, 31.0f);
-	ground3->SetScale(1.0f);
-	sprites.push_back(ground3);
-
-	CSimpleSprite* ground4 = App::CreateSprite(".\\Assets\\ground.png", 1, 1);
-	ground4->SetPosition(890.0f, 31.0f);
-	ground4->SetScale(1.0f);
-	sprites.push_back(ground4);
-
-	CSimpleSprite* ground5 = App::CreateSprite(".\\Assets\\ground.png", 1, 1);
-	ground5->SetPosition(1090.0f, 31.0f);
-	ground5->SetScale(1.0f);
-	sprites.push_back(ground5);
+		CGameObject* ground = new CGameObject();
+		ground->LinkSprite(groundSprite);
+		gameObjects.push_back(ground);
+	}
 
 	// catapult player
 	catapultPlayer = App::CreateSprite(".\\Assets\\Catapult\\catapult.png", 3, 4);
@@ -115,21 +141,47 @@ void Init()
 	gameObjects.push_back(catapult);
 	sprites.push_back(catapultPlayer);
 
-	//cannonBall = App::CreateSprite(".\\Assets\\Projectile\\catapultBall.png",1,1);
-	//float cannonPositionX = 0;
-	//float cannonPositionY = 0;
-	//catapultPlayer->GetPosition(cannonPositionX, cannonPositionY);
-	//cannonBall->SetPosition(66.0f,102.0f);
-	//cannonBall->SetScale(0.02f);
-
-	//CGameObject* cannonBallObject = new CGameObject();
-	//cannonBallObject->LinkSprite(cannonBall);
-	//cannonBallObject->friendlyName = "cannonball";
-	//gameObjects.push_back(cannonBallObject);
-	//sprites.push_back(cannonBall);
-	//catapult->AddChild(cannonBallObject);
-
 	catapult->LoadCatapult();
+
+	CSimpleSprite* explosionSprite = App::CreateSprite(".\\Assets\\Projectile\\explosion.png", 8, 1);
+	explosionSprite->SetPosition(100.f, 110.0f);
+	explosionSprite->CreateAnimation(ANIM_FORWARDS, 10.0f, { 0,1,2,3,4,5,6,7 });
+	explosionSprite->SetAnimation(ANIM_FORWARDS, false);
+	sprites.push_back(explosionSprite);
+	CGameObject* explosion = new CGameObject();
+	explosion->LinkSprite(explosionSprite);
+	//gameObjects.push_back(explosion);
+
+	// enemies
+
+	//unsigned int numberOfEnemies = 10;
+
+	//float lastEnemyXPos = 1025.0f;
+	//for (unsigned int i = 0; i < numberOfEnemies; i++)
+	//{
+	//	CSimpleSprite* enemySprite = App::CreateSprite(".\\Assets\\Enemies\\LightBandit.png", 8, 5);
+
+	//	float randomXIncrement = GetRandomFloat(20.0f, 100.0f);
+
+	//	enemySprite->SetPosition(lastEnemyXPos + randomXIncrement, 90.0f);
+	//	enemySprite->CreateAnimation(ANIM_FORWARDS, speed, { 8,9,10,11,12,13,14,15 });
+	//	enemySprite->SetAnimation(ANIM_FORWARDS, false);
+	//	enemySprite->SetScale(1.5f);
+	//	CEnemy* enemy = new CEnemy();
+	//	enemy->LinkSprite(enemySprite);
+	//	gameObjects.push_back(enemy);
+	//	lastEnemyXPos += + randomXIncrement;
+	//}
+
+
+	enemyCreator = new CEnemyCreator();
+
+
+	// Crystal
+	gameCrystal = new CCrystal();
+
+	gameObjects.push_back(gameCrystal);
+
 }
 
 //------------------------------------------------------------------------
@@ -145,16 +197,56 @@ void Update(float deltaTime)
 
 	catapult->UpdateCatapult(deltaTime);
 
-	std::vector<CSimpleSprite*>::iterator it;
-	for (it = sprites.begin(); it != sprites.end(); ++it) 
-	{
-		(*it)->Update(deltaTime);
-	}
+	uiManager->UpdateUiTimer(deltaTime);
+
+	gameCrystal->UpdateCrystal(deltaTime);
 
 	std::vector<CGameObject*>::iterator gameObjectsIterator;
 	for (gameObjectsIterator = gameObjects.begin(); gameObjectsIterator != gameObjects.end(); ++gameObjectsIterator)
 	{
 		(*gameObjectsIterator)->Update(deltaTime);
+		(*gameObjectsIterator)->GetSprite()->Update(deltaTime);
+	}
+
+	
+	std::vector<CCannonBall*>::iterator cannonBallsIterator;
+	for (cannonBallsIterator = cannonBalls.begin(); cannonBallsIterator != cannonBalls.end(); ++cannonBallsIterator)
+	{
+		(*cannonBallsIterator)->UpdateCannonBall(deltaTime);
+		float x, y;
+		(*cannonBallsIterator)->GetSprite()->GetPosition(x, y);
+
+		if (y < 65.0f)
+		{
+			(*cannonBallsIterator)->Explode();
+		}
+	}
+
+	bool hasErasedAll = false;
+
+	while (!hasErasedAll)
+	{
+		CCannonBall* ballToDelete = nullptr;
+		unsigned int indexForDelete = 0;
+
+		for (cannonBallsIterator = cannonBalls.begin(); cannonBallsIterator != cannonBalls.end(); ++cannonBallsIterator)
+		{
+			if ((*cannonBallsIterator)->ShouldDeleteThis())
+			{
+				ballToDelete = (*cannonBallsIterator);
+				break;
+			}
+			++indexForDelete;
+		}
+
+		if (ballToDelete == nullptr)
+		{
+			break;
+		}
+
+		CGameManager::getGmInstance()->DeleteGameObjectByUniqueId(ballToDelete->GetGameObjectID());
+		//delete ballToDelete;
+		cannonBalls.erase(cannonBalls.begin() + indexForDelete);
 	}
 
 	if (App::GetController().GetLeftThumbStickX() > 0.5f)
@@ -170,31 +262,44 @@ void Update(float deltaTime)
 
 	if (App::GetController().CheckButton(XINPUT_GAMEPAD_A, true))
 	{
-		if (catapult->GetCanInteract())
+		if (uiManager->GetIsGameOver())
 		{
-			App::PlaySound(".\\TestData\\Test.wav");
+			CGameManager::getGmInstance()->RestartGame();
+		}
+		else
+		{
+			if (catapult->GetCanInteract())
+			{
+				App::PlaySound(".\\TestData\\Test.wav");
 
-			catapultPlayer->SetAnimation(ANIM_RELEASE, false);
-			catapult->SetIsAnimating(true);
+				//warrior_death
+				//App::PlaySound(".\\Assets\\Audio\\warrior_death.wav");
 
-			CGameObject* cannonBall = catapult->GetCannonBall();
-			cannonBall->StopVelocity();
-			cannonBall->AddVelocity(5.0f, 5.0f);
-			cannonBall->UseGravity(true);
+				catapultPlayer->SetAnimation(ANIM_RELEASE, false);
+				catapult->SetIsAnimating(true);
+
+				CCannonBall* cannonBall = catapult->GetCannonBall();
+				cannonBall->StopVelocity();
+				cannonBall->AddVelocity(5.0f, 5.0f);
+				cannonBall->UseGravity(true);
+				cannonBall->SetIsColliding(true);
+			}
 		}
 	}
 
-	if (App::GetController().CheckButton(XINPUT_GAMEPAD_START, true))
-	{
-		CGameManager::getGmInstance()->RestartGame();
-		CGameManager::getGmInstance()->FindCGameObjectByFriendlyName("catapult")->StopAnimating();
-		//catapult->GetCannonBall()
+	//if (App::GetController().CheckButton(XINPUT_GAMEPAD_START, true))
+	//{
+	//	CGameManager::getGmInstance()->RestartGame();
+	//	CGameManager::getGmInstance()->FindCGameObjectByFriendlyName("catapult")->StopAnimating();
+	//	//catapult->GetCannonBall()
 
+	//	CGameManager::getGmInstance()->FindCGameObjectByFriendlyName("cannonball")->UseGravity(false);
+	//	catapultPlayer->SetFrame(2);
+	//}
 
-		CGameManager::getGmInstance()->FindCGameObjectByFriendlyName("cannonball")->UseGravity(false);
-		catapultPlayer->SetFrame(2);
-	}
+	enemyCreator->Update(deltaTime);
 	
+	timer += (deltaTime / 1000.f);
 
 	//if (App::GetController().CheckButton(XINPUT_GAMEPAD_DPAD_UP, false))
 	//{
@@ -284,17 +389,13 @@ void Update(float deltaTime)
 	//------------------------------------------------------------------------
 	// Sample Sound.
 	//------------------------------------------------------------------------
-	if (App::GetController().CheckButton(XINPUT_GAMEPAD_B, true))
-	{
+	//if (App::GetController().CheckButton(XINPUT_GAMEPAD_B, true))
+	//{
+	//	std::string mousePosition = "x: " + std::to_string(mousePosx) + " y: " + std::to_string(mousePosy);
+	//	App::Print(100.0f, 500.0f, mousePosition.c_str());
+	//	App::PlaySound(".\\TestData\\Test.wav");
+	//}
 
-		std::string mousePosition = "x: " + std::to_string(mousePosx) + " y: " + std::to_string(mousePosy);
-
-		App::Print(100.0f, 500.0f, mousePosition.c_str());
-
-		App::PlaySound(".\\TestData\\Test.wav");
-
-
-	}
 
 }
 
@@ -304,17 +405,23 @@ void Update(float deltaTime)
 //------------------------------------------------------------------------
 void Render()
 {	
-	std::vector<CSimpleSprite*>::iterator it;
-	for (it = sprites.begin(); it != sprites.end(); ++it)
-	{
-		(*it)->Draw();
-	}
-
-	//std::vector<CGameObject*>::iterator gameObjectsIterator;
-	//for (gameObjectsIterator = gameObjects.begin(); gameObjectsIterator != gameObjects.end(); ++it)
+	//std::vector<CSimpleSprite*>::iterator it;
+	//for (it = sprites.begin(); it != sprites.end(); ++it)
 	//{
-	//	(*gameObjectsIterator)->Draw();
+	//	(*it)->Draw();
 	//}
+
+	//std::vector<CSimpleSprite*>::iterator it;
+	//for (it = sprites.begin(); it != sprites.end(); ++it)
+	//{
+	//	(*it)->Draw();
+	//}
+
+	std::vector<CGameObject*>::iterator gameObjectsIterator;
+	for (gameObjectsIterator = gameObjects.begin(); gameObjectsIterator != gameObjects.end(); ++gameObjectsIterator)
+	{
+		(*gameObjectsIterator)->GetSprite()->Draw();
+	}
 
 	//cannonBall->Draw();
 
@@ -327,10 +434,23 @@ void Render()
 	//------------------------------------------------------------------------
 	// Example Text.
 	//------------------------------------------------------------------------
-	std::string mousePosition = "x: " + std::to_string(mousePosx) + " y: " + std::to_string(mousePosy);
-	App::Print(15, 745, mousePosition.c_str());
+	//std::string mousePosition = "x: " + std::to_string(mousePosx) + " y: " + std::to_string(mousePosy);
+	//App::Print(15, 745, mousePosition.c_str());
 
+	uiManager->RenderUi();
 
+	//std::string scoreText = "SCORE: " + std::to_string(playerScore); 
+	//App::Print(15, 745, scoreText.c_str());
+
+	//std::string catapultHealth = "HEALTH: " + std::to_string(catapult->GetHealth());
+	//App::Print(15, 645, catapultHealth.c_str());
+
+	//std::ostringstream oss;
+	//oss << std::fixed << std::setprecision(2) << timer;
+
+	//std::string stringValue = oss.str();
+	//std::string timeText = "TIMER: " + stringValue;
+	//App::Print(250, 745, timeText.c_str());
 
 	//App::Print(100, 100, "Sample Text");
 
@@ -364,4 +484,19 @@ void Shutdown()
 	// Example Sprite Code....
 	//delete testSprite;
 	//------------------------------------------------------------------------
+}
+
+
+float GetRandomFloat(float a, float b)
+{
+	float random = ((float)rand()) / (float)RAND_MAX;
+	float diff = b - a;
+	float r = random * diff;
+	return a + r;
+}
+
+
+void PlaySoundFromFile(std::string fileName)
+{
+	App::PlaySound(fileName.c_str());
 }
